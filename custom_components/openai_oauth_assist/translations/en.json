@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenAI Assist",
+        "description": "Configure ChatGPT/Codex OAuth using the Codex CLI auth.json file that Home Assistant can read.",
+        "data": {
+          "name": "Name",
+          "codex_auth_json_path": "Codex auth.json path",
+          "model": "Model",
+          "system_prompt": "System prompt"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate OpenAI Assist",
+        "description": "OpenAI rejected the stored ChatGPT/Codex credentials. Point Home Assistant at a fresh Codex auth.json file.",
+        "data": {
+          "name": "Name",
+          "codex_auth_json_path": "Codex auth.json path",
+          "model": "Model",
+          "system_prompt": "System prompt"
+        }
+      }
+    },
+    "error": {
+      "api_error": "OpenAI returned an error during validation.",
+      "cannot_connect": "Could not connect to OpenAI.",
+      "codex_auth_file_unreadable": "Home Assistant could not read the Codex auth.json file at that path.",
+      "invalid_codex_auth_json": "Codex auth.json is not valid or is missing ChatGPT OAuth tokens.",
+      "invalid_auth": "OpenAI rejected the credentials.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "OpenAI Assist is already configured.",
+      "reauth_successful": "OpenAI Assist re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OpenAI Assist options",
+        "data": {
+          "model": "Model",
+          "system_prompt": "System prompt"
+        }
+      }
+    }
+  }
+}

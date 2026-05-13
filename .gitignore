@@ -1,0 +1,17 @@
+.DS_Store
+._*
+.__*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local Home Assistant/Codex secrets and runtime state.
+.codex/
+auth.json
+*.log
+.env
+.env.*
