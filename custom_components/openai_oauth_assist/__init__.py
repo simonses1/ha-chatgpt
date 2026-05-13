@@ -1,4 +1,4 @@
-"""OpenAI OAuth Assist proof-of-concept integration."""
+"""OpenAI OAuth Assist integration."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ OpenAIAssistConfigEntry = ConfigEntry[OpenAIResponsesClient]
 async def async_setup_entry(
     hass: HomeAssistant, entry: OpenAIAssistConfigEntry
 ) -> bool:
-    """Set up OpenAI OAuth Assist from a config entry."""
+    """Set up a config entry."""
     session = async_get_clientsession(hass)
     entry.runtime_data = OpenAIResponsesClient.from_config_entry_data(
         session, entry.data
@@ -46,5 +46,5 @@ async def async_reload_entry(
 async def async_migrate_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> bool:
-    """Migrate old config entries."""
+    """Migrate config entries."""
     return True

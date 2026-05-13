@@ -1,4 +1,4 @@
-"""Diagnostics for OpenAI OAuth Assist."""
+"""Redacted diagnostics."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ TO_REDACT = {
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: OpenAIAssistConfigEntry
 ) -> dict[str, Any]:
-    """Return diagnostics with secrets redacted."""
+    """Return config data without token fields."""
     return {
         "entry": async_redact_data(dict(entry.data), TO_REDACT),
         "options": dict(entry.options),

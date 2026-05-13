@@ -1,4 +1,4 @@
-"""Constants for the OpenAI OAuth Assist proof of concept."""
+"""Integration constants."""
 
 from __future__ import annotations
 

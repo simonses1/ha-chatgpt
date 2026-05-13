@@ -1,4 +1,4 @@
-"""Conversation platform for OpenAI OAuth Assist."""
+"""Conversation entity."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ async def async_setup_entry(
     entry: OpenAIAssistConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up the conversation entity."""
+    """Set up the entity."""
     async_add_entities([OpenAIAssistConversationEntity(entry)])
 
 
@@ -49,14 +49,14 @@ class OpenAIAssistConversationEntity(
     conversation.ConversationEntity,
     conversation.AbstractConversationAgent,
 ):
-    """OpenAI-backed conversation agent."""
+    """Conversation agent backed by ChatGPT/Codex."""
 
     _attr_has_entity_name = True
     _attr_supports_streaming = True
     _attr_supported_features = conversation.ConversationEntityFeature.CONTROL
 
     def __init__(self, entry: OpenAIAssistConfigEntry) -> None:
-        """Initialise the entity."""
+        """Initialise entity state."""
         self.entry = entry
         self._attr_unique_id = entry.entry_id
         self._attr_name = entry.title
@@ -68,12 +68,12 @@ class OpenAIAssistConversationEntity(
         return MATCH_ALL
 
     async def async_added_to_hass(self) -> None:
-        """Register this entity as a conversation agent."""
+        """Register the conversation agent."""
         await super().async_added_to_hass()
         conversation.async_set_agent(self.hass, self.entry, self)
 
     async def async_will_remove_from_hass(self) -> None:
-        """Unregister this entity as a conversation agent."""
+        """Unregister the conversation agent."""
         conversation.async_unset_agent(self.hass, self.entry)
         await super().async_will_remove_from_hass()
 
@@ -82,7 +82,7 @@ class OpenAIAssistConversationEntity(
         user_input: conversation.ConversationInput,
         chat_log: conversation.ChatLog,
     ) -> conversation.ConversationResult:
-        """Process the user input with OpenAI."""
+        """Handle one conversation turn."""
         options = {**self.entry.data, **self.entry.options}
         client = self.entry.runtime_data
 
@@ -147,7 +147,7 @@ class OpenAIAssistConversationEntity(
         client: OpenAIResponsesClient,
         options: dict[str, Any],
     ) -> None:
-        """Generate assistant content and execute Home Assistant tool calls."""
+        """Stream assistant output and execute tool calls."""
         for _iteration in range(MAX_TOOL_ITERATIONS):
             async for _content in chat_log.async_add_delta_content_stream(
                 user_input.agent_id,
@@ -164,7 +164,7 @@ class OpenAIAssistConversationEntity(
         raise OpenAIResponseError("OpenAI exceeded the maximum tool-call iterations")
 
     def _async_add_extra_tools(self, chat_log: conversation.ChatLog) -> None:
-        """Append integration-specific tools to the Home Assistant LLM API."""
+        """Add status and memory tools."""
         if chat_log.llm_api is None:
             return
         if self._memory_store is None:
@@ -180,7 +180,7 @@ class OpenAIAssistConversationEntity(
         user_input: conversation.ConversationInput,
         client: OpenAIResponsesClient,
     ) -> bool:
-        """Refresh ChatGPT/Codex OAuth credentials after one auth failure."""
+        """Refresh credentials after an auth failure."""
         if self.entry.data.get(CONF_AUTH_METHOD) != AUTH_METHOD_CHATGPT_CODEX:
             return False
         if client.chatgpt_refresh_token is None:
@@ -200,7 +200,7 @@ class OpenAIAssistConversationEntity(
     async def _async_refresh_chatgpt_tokens(
         self, client: OpenAIResponsesClient
     ) -> None:
-        """Refresh and persist ChatGPT/Codex OAuth tokens."""
+        """Refresh and store OAuth tokens."""
         updates = await client.async_refresh_chatgpt_tokens()
         if not updates:
             return
@@ -214,7 +214,7 @@ class OpenAIAssistConversationEntity(
 def _error_result(
     user_input: conversation.ConversationInput, message: str
 ) -> conversation.ConversationResult:
-    """Return a safe assistant-visible error response."""
+    """Build an assistant-visible error."""
     response = intent.IntentResponse(language=user_input.language)
     response.async_set_speech(message)
     return conversation.ConversationResult(

@@ -1,4 +1,4 @@
-"""Config flow for the OpenAI OAuth Assist proof of concept."""
+"""Config flow for ChatGPT/Codex auth."""
 
 from __future__ import annotations
 
@@ -56,11 +56,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class CodexAuthFileError(ValueError):
-    """The configured Codex auth file path is not readable."""
+    """Codex auth file cannot be read."""
 
 
 def _default_codex_auth_json_path() -> str:
-    """Return Codex's normal auth.json path for the Home Assistant runtime."""
+    """Return Codex's default auth path."""
     codex_home = os.environ.get("CODEX_HOME")
     if codex_home:
         return str(Path(codex_home).expanduser() / "auth.json")
@@ -68,7 +68,7 @@ def _default_codex_auth_json_path() -> str:
 
 
 def _read_codex_auth_json_file(path_value: str) -> str:
-    """Read Codex auth.json from a validated local Home Assistant path."""
+    """Read a local Codex auth file."""
     if not path_value.strip():
         raise CodexAuthFileError("Codex auth.json path is empty")
 
@@ -84,7 +84,7 @@ def _read_codex_auth_json_file(path_value: str) -> str:
 
 
 def _codex_data_schema(defaults: Mapping[str, Any] | None = None) -> vol.Schema:
-    """Return the ChatGPT/Codex-only config flow schema."""
+    """Build the setup form schema."""
     defaults = defaults or {}
     return vol.Schema(
         {
@@ -115,7 +115,7 @@ def _codex_data_schema(defaults: Mapping[str, Any] | None = None) -> vol.Schema:
 
 
 def _options_schema(defaults: Mapping[str, Any]) -> vol.Schema:
-    """Return options flow schema."""
+    """Build the options form schema."""
     return vol.Schema(
         {
             vol.Required(
@@ -133,7 +133,7 @@ def _options_schema(defaults: Mapping[str, Any]) -> vol.Schema:
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
-    """Validate user credentials against OpenAI."""
+    """Validate OpenAI credentials."""
     session = async_get_clientsession(hass)
     client = OpenAIResponsesClient.from_config_entry_data(session, data)
     await client.async_validate()
@@ -142,7 +142,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
 async def _normalise_codex_config_data(
     hass: HomeAssistant, user_input: dict[str, Any]
 ) -> dict[str, Any]:
-    """Read auth.json, extract tokens, and add hidden Codex defaults."""
+    """Read auth.json and attach Codex defaults."""
     data = dict(user_input)
     path_value = data.get(CONF_CODEX_AUTH_JSON_PATH) or _default_codex_auth_json_path()
 
@@ -160,14 +160,14 @@ async def _normalise_codex_config_data(
 
 
 class OpenAIAssistConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle the OpenAI OAuth Assist config flow."""
+    """Config flow handler."""
 
     VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the ChatGPT/Codex-only setup step."""
+        """Handle setup."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -215,13 +215,13 @@ class OpenAIAssistConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
-        """Start reauthentication."""
+        """Start reauth."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect replacement ChatGPT/Codex credentials."""
+        """Collect replacement credentials."""
         if user_input is None:
             entry = self._get_reauth_entry()
             defaults = dict(entry.data)
@@ -236,17 +236,17 @@ class OpenAIAssistConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
-        """Create the options flow."""
+        """Create options flow."""
         return OpenAIAssistOptionsFlow()
 
 
 class OpenAIAssistOptionsFlow(OptionsFlow):
-    """Handle reconfigurable model options."""
+    """Options flow handler."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Manage options."""
+        """Handle options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 

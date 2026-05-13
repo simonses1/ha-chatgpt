@@ -1,4 +1,4 @@
-"""Async ChatGPT/Codex API client for the integration."""
+"""ChatGPT/Codex API client."""
 
 from __future__ import annotations
 
@@ -46,32 +46,32 @@ FALLBACK_INSTRUCTIONS: Final = "You are a concise Home Assistant voice assistant
 
 
 class OpenAIAssistError(Exception):
-    """Base exception for OpenAI Assist API errors."""
+    """Base API error."""
 
 
 class OpenAIAuthError(OpenAIAssistError):
-    """OpenAI rejected the configured credentials."""
+    """OpenAI rejected the credentials."""
 
 
 class OpenAIRateLimitError(OpenAIAssistError):
-    """OpenAI rate limited the request."""
+    """OpenAI returned a rate limit."""
 
 
 class OpenAIResponseError(OpenAIAssistError):
-    """OpenAI returned an unusable response."""
+    """OpenAI returned an invalid response."""
 
 
 class OpenAIConnectionError(OpenAIAssistError):
-    """Home Assistant could not connect to OpenAI."""
+    """Home Assistant could not reach OpenAI."""
 
 
 class CodexAuthJsonError(ValueError):
-    """The supplied Codex auth cache is missing required token fields."""
+    """Codex auth JSON lacks required token fields."""
 
 
 @dataclass(slots=True)
 class OpenAIResponsesClient:
-    """Small aiohttp client for ChatGPT/Codex OAuth."""
+    """aiohttp client for ChatGPT/Codex OAuth."""
 
     session: ClientSession
     auth_method: str = AUTH_METHOD_CHATGPT_CODEX
@@ -104,7 +104,7 @@ class OpenAIResponsesClient:
         )
 
     async def async_validate(self) -> None:
-        """Validate credentials without sending user prompts."""
+        """Validate credentials without a prompt."""
         await self._request_chatgpt_json(
             "GET",
             "models",
@@ -118,7 +118,7 @@ class OpenAIResponsesClient:
         user_prompt: str,
         system_prompt: str | None,
     ) -> str:
-        """Create a model response and return plain output text."""
+        """Create a text response."""
         return await self._async_create_chatgpt_codex_response(
             model=model,
             user_prompt=user_prompt,
@@ -131,7 +131,7 @@ class OpenAIResponsesClient:
         model: str,
         chat_log: conversation.ChatLog,
     ) -> AsyncGenerator[dict[str, Any]]:
-        """Stream a ChatGPT/Codex response as Home Assistant chat-log deltas."""
+        """Stream response deltas for a Home Assistant chat log."""
         instructions, input_items = codex_input_from_chat_log(chat_log.content)
         payload: dict[str, Any] = {
             "model": model,
@@ -153,14 +153,14 @@ class OpenAIResponsesClient:
             yield delta
 
     def chatgpt_token_needs_refresh(self) -> bool:
-        """Return true when the access token is near expiry."""
+        """Check whether the access token needs refresh."""
         expires_at = jwt_expires_at(self.chatgpt_access_token)
         if expires_at is None:
             return False
         return expires_at <= int(time.time()) + TOKEN_REFRESH_SKEW_SECONDS
 
     async def async_refresh_chatgpt_tokens(self) -> dict[str, Any]:
-        """Refresh a Codex OAuth token and update this client in memory."""
+        """Refresh Codex OAuth tokens."""
         if self.auth_method != AUTH_METHOD_CHATGPT_CODEX:
             return {}
         if not self.chatgpt_refresh_token:
@@ -219,7 +219,7 @@ class OpenAIResponsesClient:
         user_prompt: str,
         system_prompt: str | None,
     ) -> str:
-        """Create a response through the ChatGPT/Codex backend."""
+        """Create a Codex backend response."""
         payload: dict[str, Any] = {
             "model": model,
             "input": [{"role": "user", "content": user_prompt}],
@@ -239,7 +239,7 @@ class OpenAIResponsesClient:
         params: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Issue a JSON request to the ChatGPT/Codex backend."""
+        """Send a JSON request to the Codex backend."""
         url = _join_url(self.base_url, path)
         if params:
             url = f"{url}?{urlencode(params)}"
@@ -261,7 +261,7 @@ class OpenAIResponsesClient:
     async def _request_chatgpt_stream(
         self, method: str, path: str, **kwargs: Any
     ) -> str:
-        """Issue a streaming request to the ChatGPT/Codex backend."""
+        """Send a streaming request to the Codex backend."""
         url = _join_url(self.base_url, path)
         try:
             async with self.session.request(
@@ -282,7 +282,7 @@ class OpenAIResponsesClient:
     async def _stream_chatgpt_events(
         self, method: str, path: str, **kwargs: Any
     ) -> AsyncGenerator[dict[str, Any]]:
-        """Issue a streaming request and yield decoded Codex response events."""
+        """Stream decoded Codex events."""
         url = _join_url(self.base_url, path)
         try:
             async with self.session.request(
@@ -318,7 +318,7 @@ class OpenAIResponsesClient:
             raise OpenAIConnectionError("Unable to connect to OpenAI") from err
 
     def _chatgpt_headers(self, *, event_stream: bool) -> dict[str, str]:
-        """Return safe ChatGPT/Codex request headers."""
+        """Build ChatGPT/Codex request headers."""
         if not self.chatgpt_access_token or not self.chatgpt_account_id:
             raise OpenAIAuthError("ChatGPT/Codex OAuth credentials are missing")
 
@@ -335,7 +335,7 @@ class OpenAIResponsesClient:
 
 
 async def _handle_response(response: ClientResponse) -> dict[str, Any]:
-    """Parse a response body and raise safe exceptions for failures."""
+    """Parse an HTTP response."""
     status = response.status
     content_type = response.headers.get("Content-Type", "")
 
@@ -366,7 +366,7 @@ async def _handle_response(response: ClientResponse) -> dict[str, Any]:
 
 
 async def extract_sse_response_text(response: ClientResponse) -> str:
-    """Extract text from a ChatGPT/Codex streamed Responses API body."""
+    """Extract text from a streamed Responses body."""
     deltas: list[str] = []
     done_text: str | None = None
 
@@ -408,7 +408,7 @@ async def extract_sse_response_text(response: ClientResponse) -> str:
 async def stream_codex_response_deltas(
     events: AsyncIterable[dict[str, Any]],
 ) -> AsyncGenerator[dict[str, Any]]:
-    """Transform Codex Responses stream events to Home Assistant chat-log deltas."""
+    """Convert Codex stream events to chat-log deltas."""
     from homeassistant.helpers import llm  # noqa: PLC0415
 
     emitted_text = False
@@ -507,7 +507,7 @@ async def stream_codex_response_deltas(
 def codex_input_from_chat_log(
     chat_content: list[conversation.Content],
 ) -> tuple[str, list[dict[str, Any]]]:
-    """Convert Home Assistant chat-log content to Codex Responses input."""
+    """Convert a Home Assistant chat log to Codex input."""
     instructions = ""
     input_items: list[dict[str, Any]] = []
 
@@ -557,7 +557,7 @@ def codex_input_from_chat_log(
 
 
 def format_tool_for_codex(tool: Any, custom_serializer: Any | None) -> dict[str, Any]:
-    """Convert a Home Assistant LLM tool to a Codex Responses function tool."""
+    """Convert a Home Assistant tool to a Codex function tool."""
     return {
         "type": "function",
         "name": tool.name,
@@ -572,7 +572,7 @@ def format_tool_for_codex(tool: Any, custom_serializer: Any | None) -> dict[str,
 def tool_parameters_to_json_schema(
     parameters: Any, custom_serializer: Any | None
 ) -> dict[str, Any]:
-    """Convert a voluptuous tool schema to an OpenAI-compatible JSON schema."""
+    """Convert tool parameters to JSON Schema."""
     if isinstance(parameters, dict):
         schema = dict(parameters)
     else:
@@ -592,7 +592,7 @@ def tool_parameters_to_json_schema(
 
 
 def normalise_tool_schema(schema: dict[str, Any]) -> None:
-    """Remove schema constructs that Codex function tools do not accept reliably."""
+    """Remove schema constructs Codex function tools reject."""
     for key in ("oneOf", "anyOf", "allOf", "not"):
         schema.pop(key, None)
 
@@ -612,7 +612,7 @@ def normalise_tool_schema(schema: dict[str, Any]) -> None:
 
 
 async def iter_sse_events(response: ClientResponse):
-    """Yield parsed Server-Sent Events from an aiohttp response."""
+    """Yield parsed Server-Sent Events."""
     buffer = ""
     event_type: str | None = None
     data_lines: list[str] = []
@@ -657,7 +657,7 @@ async def iter_sse_events(response: ClientResponse):
 
 
 def parse_codex_auth_json(raw_json: str) -> dict[str, Any]:
-    """Extract ChatGPT/Codex OAuth tokens from Codex CLI auth.json content."""
+    """Extract OAuth tokens from Codex auth JSON."""
     try:
         data = json.loads(raw_json)
     except json.JSONDecodeError as err:
@@ -699,7 +699,7 @@ def parse_codex_auth_json(raw_json: str) -> dict[str, Any]:
 
 
 def jwt_expires_at(token: str | None) -> int | None:
-    """Return a JWT exp claim without verifying the token signature."""
+    """Read a JWT exp claim without signature verification."""
     if not token:
         return None
     parts = token.split(".")
@@ -721,12 +721,12 @@ def jwt_expires_at(token: str | None) -> int | None:
 
 
 def _join_url(base_url: str, path: str) -> str:
-    """Join a base URL and API path without losing path prefixes."""
+    """Join a base URL and API path."""
     return urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
 
 
 def extract_response_text(data: dict[str, Any]) -> str:
-    """Extract plain text from a Responses API response body."""
+    """Extract text from a Responses body."""
     output_text = data.get("output_text")
     if isinstance(output_text, str) and output_text.strip():
         return output_text

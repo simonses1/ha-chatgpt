@@ -1,4 +1,4 @@
-"""Extra Home Assistant LLM tools for OpenAI OAuth Assist."""
+"""Local LLM tools."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ STATUS_SENSOR_DEVICE_CLASSES = {
 
 @dataclass(slots=True)
 class EntityStatus:
-    """Small entity status record."""
+    """Entity state exposed to the model."""
 
     entity_id: str
     name: str
@@ -62,7 +62,7 @@ class EntityStatus:
     area: str | None
 
     def as_dict(self) -> dict[str, Any]:
-        """Return a JSON serialisable representation."""
+        """Serialise the state."""
         return {
             "entity_id": self.entity_id,
             "name": self.name,
@@ -73,10 +73,10 @@ class EntityStatus:
 
 
 class MemoryStore:
-    """Persistent memory store backed by Home Assistant storage."""
+    """Memory store backed by Home Assistant storage."""
 
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
-        """Initialise the store."""
+        """Prepare the store."""
         self._store = Store(
             hass,
             MEMORY_STORAGE_VERSION,
@@ -86,7 +86,7 @@ class MemoryStore:
         self._items: list[dict[str, Any]] = []
 
     async def _async_ensure_loaded(self) -> None:
-        """Load memory once."""
+        """Load stored memories."""
         if self._loaded:
             return
 
@@ -98,7 +98,7 @@ class MemoryStore:
         self._loaded = True
 
     async def async_save_memory(self, text: str) -> dict[str, Any]:
-        """Persist one memory item."""
+        """Store one memory."""
         await self._async_ensure_loaded()
         text = " ".join(text.strip().split())
         if not text:
@@ -125,7 +125,7 @@ class MemoryStore:
     async def async_search_memory(
         self, query: str | None, limit: int = MEMORY_SEARCH_LIMIT
     ) -> dict[str, Any]:
-        """Return matching memories by simple keyword score."""
+        """Search memories by keyword score."""
         await self._async_ensure_loaded()
         limit = max(1, min(limit, MEMORY_SEARCH_LIMIT))
         query_tokens = _tokenise(query or "")
@@ -154,7 +154,7 @@ class MemoryStore:
 
 
 class GetHomeStatusTool(llm.Tool):
-    """Read-only status summary for exposed Home Assistant entities."""
+    """Read Assist-exposed entity state."""
 
     name = "GetHomeStatus"
     description = (
@@ -176,7 +176,7 @@ class GetHomeStatusTool(llm.Tool):
         tool_input: llm.ToolInput,
         llm_context: llm.LLMContext,
     ) -> JsonObjectType:
-        """Return current state for exposed entities."""
+        """Read current exposed state."""
         args = tool_input.tool_args
         area_filter = _normalise(args.get("area"))
         domain_filter = _normalise(args.get("domain"))
@@ -265,7 +265,7 @@ class GetHomeStatusTool(llm.Tool):
 
 
 class SaveMemoryTool(llm.Tool):
-    """Persist a user memory."""
+    """Save assistant memory."""
 
     name = "SaveMemory"
     description = (
@@ -276,7 +276,7 @@ class SaveMemoryTool(llm.Tool):
     parameters = vol.Schema({vol.Required("text"): str})
 
     def __init__(self, memory_store: MemoryStore) -> None:
-        """Initialise the tool."""
+        """Bind memory storage."""
         self._memory_store = memory_store
 
     async def async_call(
@@ -292,7 +292,7 @@ class SaveMemoryTool(llm.Tool):
 
 
 class SearchMemoryTool(llm.Tool):
-    """Search stored user memories."""
+    """Search assistant memory."""
 
     name = "SearchMemory"
     description = (
@@ -308,7 +308,7 @@ class SearchMemoryTool(llm.Tool):
     )
 
     def __init__(self, memory_store: MemoryStore) -> None:
-        """Initialise the tool."""
+        """Bind memory storage."""
         self._memory_store = memory_store
 
     async def async_call(
@@ -317,7 +317,7 @@ class SearchMemoryTool(llm.Tool):
         tool_input: llm.ToolInput,
         llm_context: llm.LLMContext,
     ) -> JsonObjectType:
-        """Search memories."""
+        """Search stored memories."""
         try:
             limit = int(tool_input.tool_args.get("limit", 5))
         except (TypeError, ValueError):
@@ -329,7 +329,7 @@ class SearchMemoryTool(llm.Tool):
 
 
 def build_extra_tools(memory_store: MemoryStore) -> list[llm.Tool]:
-    """Return extra LLM tools supplied by this integration."""
+    """Build local LLM tools."""
     return [
         GetHomeStatusTool(),
         SaveMemoryTool(memory_store),
@@ -343,7 +343,7 @@ def _entity_area_name(
     area_reg: ar.AreaRegistry,
     device_reg: dr.DeviceRegistry,
 ) -> str | None:
-    """Return the entity area name when available."""
+    """Look up the entity area name."""
     entity_entry = entity_reg.async_get(entity_id)
     area_id = entity_entry.area_id if entity_entry else None
     if not area_id and entity_entry and entity_entry.device_id:
@@ -356,7 +356,7 @@ def _entity_area_name(
 
 
 def _normalise(value: Any) -> str | None:
-    """Normalise a user-supplied filter value."""
+    """Normalise filter text."""
     if value is None:
         return None
     text = str(value).strip().lower()
@@ -364,5 +364,5 @@ def _normalise(value: Any) -> str | None:
 
 
 def _tokenise(text: str) -> set[str]:
-    """Return lower-case search tokens."""
+    """Tokenise memory text."""
     return set(re.findall(r"[a-z0-9_'-]+", text.lower()))

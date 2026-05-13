@@ -1,4 +1,4 @@
-"""Dependency-light tests for integration-local LLM tools."""
+"""Local LLM tool tests with stubs."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 
 def _install_stubs() -> None:
-    """Install enough stubs to import the tools module without Home Assistant."""
+    """Install Home Assistant import stubs."""
     homeassistant = sys.modules.setdefault(
         "homeassistant", types.ModuleType("homeassistant")
     )
@@ -157,7 +157,7 @@ tools = importlib.import_module("custom_components.openai_oauth_assist.tools")
 
 
 class ToolTests(unittest.IsolatedAsyncioTestCase):
-    """Test local tool behaviour."""
+    """Local tool coverage."""
 
     async def test_memory_store_saves_and_searches(self):
         hass = SimpleNamespace()

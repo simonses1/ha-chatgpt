@@ -1,4 +1,4 @@
-"""Dependency-light tests for the OpenAI API helper module."""
+"""API helper tests with local stubs."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from types import SimpleNamespace
 
 
 def _install_homeassistant_stubs() -> None:
-    """Install enough Home Assistant stubs to import the custom component."""
+    """Install Home Assistant import stubs."""
     if "homeassistant" in sys.modules:
         return
 
@@ -65,7 +65,7 @@ api = importlib.import_module("custom_components.openai_oauth_assist.api")
 
 
 class FakeResponse:
-    """Small fake aiohttp response object."""
+    """Fake aiohttp response."""
 
     def __init__(self, status, data, content_type="application/json"):
         self.status = status
@@ -81,7 +81,7 @@ class FakeResponse:
 
 
 class FakeContent:
-    """Small fake aiohttp stream object."""
+    """Fake aiohttp stream."""
 
     def __init__(self, body):
         self._body = body
@@ -92,7 +92,7 @@ class FakeContent:
 
 
 class ApiHelperTests(unittest.IsolatedAsyncioTestCase):
-    """Test API helper behaviour."""
+    """API helper coverage."""
 
     def test_extracts_output_text_shortcut(self):
         self.assertEqual(
