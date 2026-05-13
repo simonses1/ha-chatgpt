@@ -15,6 +15,22 @@ No API-key fallback exists.
 5. Select the agent in **Settings > Voice assistants** or in the Assist pipeline settings.
 6. Expose the entities, areas, scenes, and scripts you want this agent to control.
 
+## HACS
+
+Add this repository as a HACS custom repository:
+
+```text
+https://github.com/simonses1/ha-chatgpt
+```
+
+Category:
+
+```text
+Integration
+```
+
+Install the integration from HACS, restart Home Assistant, then configure it from **Settings > Devices & services**.
+
 ## Auth File Path
 
 The config flow needs the Codex `auth.json` path as Home Assistant sees it.
@@ -226,6 +242,7 @@ custom_components/openai_oauth_assist/
   tools.py
   api.py
   diagnostics.py
+  brand/icon.png
   translations/en.json
 
 docs/
@@ -238,6 +255,8 @@ scripts/
 tests/
   test_api.py
   test_tools.py
+
+hacs.json
 ```
 
 ## Sources

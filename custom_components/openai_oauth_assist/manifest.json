@@ -1,10 +1,19 @@
 {
   "domain": "openai_oauth_assist",
   "name": "OpenAI OAuth Assist POC",
-  "after_dependencies": ["assist_pipeline", "intent"],
-  "codeowners": [],
+  "documentation": "https://github.com/simonses1/ha-chatgpt",
+  "issue_tracker": "https://github.com/simonses1/ha-chatgpt/issues",
+  "codeowners": [
+    "@simonses1"
+  ],
   "config_flow": true,
-  "dependencies": ["conversation"],
+  "dependencies": [
+    "conversation"
+  ],
+  "after_dependencies": [
+    "assist_pipeline",
+    "intent"
+  ],
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "requirements": [],
